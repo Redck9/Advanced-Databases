@@ -1,0 +1,55 @@
+Query1:
+var genre=db.albums.aggregate([{$addFields: {
+  release_date: { $toDate: "$release_date" }
+}}, {$addFields: {
+  sales_amount: {$convert:{input:"$sales_amount",to:"int"}}
+}}, {$match: {
+  "release_date": { $gte: new ISODate("2009-01-01"), $lt: new ISODate("2021-01-01")}
+}}, {$unwind: {
+  path: "$band.band_genre",
+}}, {$group: {
+  _id:"$band.band_genre",
+  total: {
+    $sum: "$sales_amount"
+  },
+  
+}}, {$sort: {
+  total: 1
+}}, {$limit: 1}  ]) 
+
+genre.forEach
+(
+   function(x)
+   { 
+    db.albums.find({"band.band_genre":{$in:[x._id] }}).forEach(printjson); 
+   }
+   ) 
+
+
+Query2:
+
+var genre=db.albums.aggregate([{$addFields: {
+  release_date: { $toDate: "$release_date" }
+}}, {$addFields: {
+  sales_amount: {$convert:{input:"$sales_amount",to:"int"}}
+}}, {$match: {
+  "release_date": { $gte: new ISODate("2009-01-01"), $lt: new ISODate("2021-01-01")}
+}}, {$unwind: {
+  path: "$band.band_genre",
+}}, {$group: {
+  _id:"$band.band_genre",
+  total: {
+    $sum: "$sales_amount"
+  },
+  
+}}, {$sort: {
+  total: 1
+}}, {$limit: 1}  ]) 
+
+genre.forEach
+(
+   function(x)
+   { 
+    db.albums.find({"band.band_genre":{$in:[x._id] }}).forEach(function(y){db.albums.update({"album_id":y.album_id},{ $mul: { sales_amount: 10 }});}); 
+   }
+   )
